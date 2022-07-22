@@ -6,6 +6,12 @@ public class RelativeMovement : MonoBehaviour
     [SerializeField] private float _speed = 15f;
     [SerializeField] private float _rotationSpeed = 15f;
     [SerializeField] private float _jumpForce;
+    [SerializeField] AnimationCurve _yJumpCurve;
+
+    private float _expiredTime = 0f;
+    private float _duration = 0.8f;
+    private bool _isJumping = false;
+
     private Transform _transform;
     private Transform _camera;
     private CharacterController _characterController;
@@ -21,7 +27,7 @@ public class RelativeMovement : MonoBehaviour
     {
         Vector3 movement = Vector3.zero;
         Vector3 rotation = Vector3.zero;
-        
+
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
         if (horizontalInput != 0 || verticalInput != 0)
@@ -41,22 +47,31 @@ public class RelativeMovement : MonoBehaviour
                 _transform.rotation, direction, _rotationSpeed * Time.deltaTime);
         }
 
-        if (_characterController.isGrounded)
+        if (Input.GetButtonDown("Jump"))
         {
-            if (Input.GetButtonDown("Jump"))
+            _isJumping = true;
+        }
+
+        if (_isJumping)
+        {
+            _expiredTime += Time.deltaTime;
+
+            if (_expiredTime > _duration)
             {
-                movement.y = _jumpForce;
+                _isJumping = false;
+                _expiredTime = 0f;
             }
-            else
-            {
-                movement.y += -1.5f;
-            }
+
+            float progress = _expiredTime / _duration;
+
+            movement.y = _yJumpCurve.Evaluate(progress);
+            movement.y *= _jumpForce;
         }
         else
         {
-            movement.y += Physics.gravity.y;
         }
 
+        movement.y += Physics.gravity.y;
         movement *= Time.deltaTime;
         _characterController.Move(movement);
     }
