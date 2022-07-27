@@ -6,7 +6,8 @@ public class RelativeMovement : MonoBehaviour
     [SerializeField] private float _speed = 15f;
     [SerializeField] private float _rotationSpeed = 15f;
     [SerializeField] private float _jumpForce;
-    [SerializeField] AnimationCurve _yJumpCurve;
+    [SerializeField] private AnimationCurve _yJumpCurve;
+    [SerializeField] private Animator _animator;
 
     private float _expiredTime = 0f;
     private float _duration = 0.8f;
@@ -37,6 +38,8 @@ public class RelativeMovement : MonoBehaviour
             movement *= _speed;
             movement = Vector3.ClampMagnitude(movement, _speed);
 
+            _animator.SetBool("Running", true);
+
             Quaternion temporary = _camera.rotation;
             _camera.eulerAngles = new Vector3(0, _camera.eulerAngles.y, 0);
             movement = _camera.TransformDirection(movement);
@@ -45,6 +48,10 @@ public class RelativeMovement : MonoBehaviour
             var direction = Quaternion.LookRotation(movement);
             _transform.rotation = Quaternion.Lerp(
                 _transform.rotation, direction, _rotationSpeed * Time.deltaTime);
+        }
+        else
+        {
+            _animator.SetBool("Running", false);
         }
 
         if (Input.GetButtonDown("Jump"))
@@ -58,9 +65,13 @@ public class RelativeMovement : MonoBehaviour
 
             if (_expiredTime > _duration)
             {
+                _animator.SetBool("Jumped", false);
+
                 _isJumping = false;
                 _expiredTime = 0f;
             }
+
+            _animator.SetBool("Jumped", true);
 
             float progress = _expiredTime / _duration;
 
@@ -69,6 +80,7 @@ public class RelativeMovement : MonoBehaviour
         }
         else
         {
+                _animator.SetBool("Jumped", false);
         }
 
         movement.y += Physics.gravity.y;
