@@ -3,16 +3,19 @@ using UnityEngine;
 [RequireComponent(typeof(CharacterController))]
 public class RelativeMovement : MonoBehaviour
 {
+    public const string Jump = nameof(Jump);
+
     [SerializeField] private float _speed = 15f;
     [SerializeField] private float _rotationSpeed = 15f;
     [SerializeField] private float _jumpForce;
+    [SerializeField] private float _duration = 0.8f;
     [SerializeField] private AnimationCurve _yJumpCurve;
-    [SerializeField] private Animator _animator;
+    [SerializeField] private CharacterAnimator _animator;
 
     private float _expiredTime = 0f;
-    private float _duration = 0.8f;
     private bool _isJumping = false;
 
+    private Vector3 _movement = Vector3.zero;
     private Transform _transform;
     private Transform _camera;
     private CharacterController _characterController;
@@ -26,35 +29,43 @@ public class RelativeMovement : MonoBehaviour
 
     private void Update()
     {
-        Vector3 movement = Vector3.zero;
-        Vector3 rotation = Vector3.zero;
+        TryMove();
+    }
 
-        float horizontalInput = Input.GetAxis("Horizontal");
-        float verticalInput = Input.GetAxis("Vertical");
-        if (horizontalInput != 0 || verticalInput != 0)
+    private void TryMove()
+    {
+        float horizontal = Input.GetAxis(Axis.Horizontal);
+        float vertical = Input.GetAxis(Axis.Vertical);
+
+        if (horizontal != 0 || vertical != 0)
         {
-            movement.x = horizontalInput;
-            movement.z = verticalInput;
-            movement *= _speed;
-            movement = Vector3.ClampMagnitude(movement, _speed);
+            _movement = new(horizontal, 0f, vertical);
+            _movement *= _speed;
+            _movement = Vector3.ClampMagnitude(_movement, _speed);
 
-            _animator.SetBool("Running", true);
+            _animator.EnableRunning();
 
             Quaternion temporary = _camera.rotation;
-            _camera.eulerAngles = new Vector3(0, _camera.eulerAngles.y, 0);
-            movement = _camera.TransformDirection(movement);
+            _camera.eulerAngles = new(0, _camera.eulerAngles.y, 0);
+            _movement = _camera.TransformDirection(_movement);
             _camera.rotation = temporary;
 
-            var direction = Quaternion.LookRotation(movement);
+            var direction = Quaternion.LookRotation(_movement);
             _transform.rotation = Quaternion.Lerp(
                 _transform.rotation, direction, _rotationSpeed * Time.deltaTime);
         }
         else
         {
-            _animator.SetBool("Running", false);
+            _animator.DisableRunning();
         }
 
-        if (Input.GetButtonDown("Jump"))
+        TryJump();
+        SetUpMovementVector();
+    }
+
+    private void TryJump()
+    {
+        if (Input.GetButtonDown(Jump))
         {
             _isJumping = true;
         }
@@ -65,26 +76,29 @@ public class RelativeMovement : MonoBehaviour
 
             if (_expiredTime > _duration)
             {
-                _animator.SetBool("Jumped", false);
+                _animator.DisableJumping();
 
                 _isJumping = false;
                 _expiredTime = 0f;
             }
 
-            _animator.SetBool("Jumped", true);
+            _animator.EnableJumping();
 
             float progress = _expiredTime / _duration;
 
-            movement.y = _yJumpCurve.Evaluate(progress);
-            movement.y *= _jumpForce;
+            _movement.y = _yJumpCurve.Evaluate(progress);
+            _movement.y *= _jumpForce;
         }
         else
         {
-                _animator.SetBool("Jumped", false);
+            _animator.DisableJumping();
         }
+    }
 
-        movement.y += Physics.gravity.y;
-        movement *= Time.deltaTime;
-        _characterController.Move(movement);
+    private void SetUpMovementVector()
+    {
+        _movement.y += Physics.gravity.y;
+        _movement *= Time.deltaTime;
+        _characterController.Move(_movement);
     }
 }

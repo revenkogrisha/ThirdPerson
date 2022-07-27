@@ -23,7 +23,7 @@ public class OrbitCameraControl : MonoBehaviour
 
     private void GetRotation()
     {
-        var mouseInputX = Input.GetAxis("Mouse X");
+        var mouseInputX = Input.GetAxis(Axis.MouseX);
         _rotationY += mouseInputX * _rotationSensivity;
     }
 
