@@ -65,7 +65,8 @@ public class RelativeMovement : MonoBehaviour
 
     private void TryJump()
     {
-        if (Input.GetButtonDown(Jump))
+        if (Input.GetButtonDown(Jump)
+            && _characterController.isGrounded)
         {
             _isJumping = true;
         }
