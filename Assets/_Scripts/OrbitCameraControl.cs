@@ -5,7 +5,6 @@ public class OrbitCameraControl : MonoBehaviour
     [SerializeField] private Transform _target;
     [SerializeField] private float _rotationSensivity = 4.5f;
     private Transform _transform;
-    private float _rotationY;
     private Vector3 _offset;
 
     private void Awake()
@@ -17,17 +16,17 @@ public class OrbitCameraControl : MonoBehaviour
 
     private void LateUpdate()
     {
-        GetRotation();
-        ApplyRotation();
+        var rotationY = GetRotationY();
+        ApplyPosition(rotationY);
     }
 
-    private void GetRotation()
+    private float GetRotationY()
     {
         var mouseInputX = Input.GetAxis(Axis.MouseX);
-        _rotationY += mouseInputX * _rotationSensivity;
+        return mouseInputX * _rotationSensivity;
     }
 
-    private void ApplyRotation()
+    private void ApplyPosition(float rotationY)
     {
         Quaternion rotation = Quaternion.Euler(0, _rotationY, 0);
         _transform.position = _target.position - (rotation * _offset);
